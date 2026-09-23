@@ -1,0 +1,38 @@
+name: Alertas Macro
+
+on:
+  schedule:
+    # Cada 5 minutos ≈ 288 ejecuciones/día
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}  # permite lanzarlo manualmente desde GitHub para probar
+
+permissions:
+  contents: write  # necesario para guardar notified.json en el repo
+
+jobs:
+  revisar-calendario:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Ejecutar bot
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python main.py
+
+      - name: Guardar registro de notificados
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Actualiza registro de alertas notificadas"
+          file_pattern: notified.json
